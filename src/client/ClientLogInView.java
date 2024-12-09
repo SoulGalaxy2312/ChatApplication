@@ -3,13 +3,21 @@ package client;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Arrays;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+
+import server.db.db;
+import server.models.Account;
 
 public class ClientLogInView extends JFrame {
     public ClientLogInView() {
@@ -41,7 +49,7 @@ public class ClientLogInView extends JFrame {
         JPanel passwordPanel = new JPanel(new FlowLayout());
         JLabel passwordLabel = new JLabel("Password");
         passwordLabel.setFont(new Font("Serif", Font.PLAIN, 17));
-        JTextField passwordField = new JTextField(10);
+        JPasswordField passwordField = new JPasswordField(10);
         passwordPanel.add(passwordLabel);
         passwordPanel.add(passwordField);
 
@@ -69,7 +77,7 @@ public class ClientLogInView extends JFrame {
         JPanel passwordPanel = new JPanel(new FlowLayout());
         JLabel passwordLabel = new JLabel("Password");
         passwordLabel.setFont(new Font("Serif", Font.PLAIN, 17));
-        JTextField passwordTextField = new JTextField(10);
+        JPasswordField passwordTextField = new JPasswordField(10);
         passwordPanel.add(passwordLabel);
         passwordPanel.add(passwordTextField);
 
@@ -77,11 +85,12 @@ public class ClientLogInView extends JFrame {
         JPanel confirmPasswordPanel = new JPanel(new FlowLayout());
         JLabel confirmPasswordLabel = new JLabel("Confirm password");
         confirmPasswordLabel.setFont(new Font("Serif", Font.PLAIN, 17));
-        JTextField confirmPasswordField = new JTextField(10);
+        JPasswordField confirmPasswordField = new JPasswordField(10);
         confirmPasswordPanel.add(confirmPasswordLabel);
         confirmPasswordPanel.add(confirmPasswordField);
 
-        JButton registryButton = new JButton("Registry");
+        JButton registryButton = new JButton("Registry");   
+        registryButton.addActionListener(new RegistryActionListener(usernameTextField, passwordTextField, confirmPasswordField));
 
         registryPanel.add(usernamePanel);
         registryPanel.add(passwordPanel);
@@ -89,5 +98,54 @@ public class ClientLogInView extends JFrame {
         registryPanel.add(registryButton);
 
         return registryPanel;
+    }
+
+    private class RegistryActionListener implements ActionListener {
+        private JTextField username;
+        private JPasswordField password;
+        private JPasswordField confirmPassword;
+
+        public RegistryActionListener(JTextField username, JPasswordField password, JPasswordField confirmPassword) { 
+            this.username = username;
+            this.password = password;
+            this.confirmPassword = confirmPassword;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String strUsername = username.getText();
+            char[] strPassword = password.getPassword();
+            char[] strConfirmPassword = confirmPassword.getPassword();
+
+            if (!Arrays.equals(strPassword, strConfirmPassword)) { 
+                JOptionPane.showMessageDialog(
+                    ClientLogInView.this, 
+                    "Confirm password not match !!!", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+    
+            Account newAccount = new Account();
+            newAccount.setUsername(strUsername);
+            newAccount.setPassword(new String(strPassword));
+
+            if (db.getInstance().registryAccount(newAccount)) {
+                JOptionPane.showMessageDialog(
+                    ClientLogInView.this, 
+                    "Registry new account successfully !!!", 
+                    "Success", 
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+            } else {
+                JOptionPane.showMessageDialog(
+                    ClientLogInView.this, 
+                    "Existing username, try another username !!!", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
     }
 }
