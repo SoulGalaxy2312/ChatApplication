@@ -31,7 +31,7 @@ public class db {
     public synchronized boolean registryAccount(Account account) {
         // Check if the account is alreay exist
         for (Account acc : instance.accounts) {
-            if (acc.equals(account)) {
+            if (acc.getUsername().equals(account.getUsername())) {
                 System.out.println("Error: Account already exists");
                 return false;
             }
@@ -40,6 +40,15 @@ public class db {
         instance.accounts.add(account);
         this.accountRepository.registryAccount(account);
         return true;
+    }
+
+    public synchronized boolean verifyAccount(Account account) {
+        for (Account acc : instance.accounts) {
+            if (acc.equals(account)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

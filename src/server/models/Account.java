@@ -26,6 +26,7 @@ public class Account {
         if (compared == null || !(compared instanceof Account)) return false;
         Account comparedObj = (Account) compared;
 
-        return this.username.equals(comparedObj.getUsername());
+        return this.username.equals(comparedObj.getUsername()) 
+                    && this.password.equals(comparedObj.getPassword());
     }
 }

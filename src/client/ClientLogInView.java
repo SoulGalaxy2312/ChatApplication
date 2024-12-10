@@ -55,6 +55,7 @@ public class ClientLogInView extends JFrame {
 
         
         JButton logInButton = new JButton("Log in");
+        logInButton.addActionListener(new SignInActionListener(usernameTextField, passwordField));
         
         logInPanel.add(usernamePanel);
         logInPanel.add(passwordPanel);
@@ -98,6 +99,37 @@ public class ClientLogInView extends JFrame {
         registryPanel.add(registryButton);
 
         return registryPanel;
+    }
+
+    private class SignInActionListener implements ActionListener {
+        private JTextField username;
+        private JPasswordField password;
+
+        public SignInActionListener(JTextField username, JPasswordField password) {
+            this.username = username;
+            this.password = password;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            String strUsername = this.username.getText();
+            char[] strPassword = this.password.getPassword();
+
+            Account signInAccount = new Account();
+            signInAccount.setUsername(strUsername);
+            signInAccount.setPassword(new String(strPassword));
+
+            if (db.getInstance().verifyAccount(signInAccount)) {
+                ClientLogInView.this.dispose();
+            } else {
+                JOptionPane.showMessageDialog(
+                    ClientLogInView.this, 
+                    "Error: Invalid account information", 
+                    "Error", 
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
     }
 
     private class RegistryActionListener implements ActionListener {
