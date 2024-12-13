@@ -121,6 +121,7 @@ public class ClientLogInView extends JFrame {
 
             if (db.getInstance().verifyAccount(signInAccount)) {
                 ClientLogInView.this.dispose();
+                new ClientMainUI();
             } else {
                 JOptionPane.showMessageDialog(
                     ClientLogInView.this, 
