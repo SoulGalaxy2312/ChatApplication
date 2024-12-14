@@ -47,7 +47,7 @@ public class Message implements Serializable {
     }
 
     public String getContentAsString() { 
-        if (type == 1) { // Assuming type 1 is text 
+        if (type == 1) {
             return new String(content, StandardCharsets.UTF_8); 
         } 
         return null; 
