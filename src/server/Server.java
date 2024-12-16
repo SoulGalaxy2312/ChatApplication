@@ -9,13 +9,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import server.models.Message;
+import server.proxies.MessageProxy;
 
 public class Server {
     private final int SERVER_PORT = 1234;
 
     ServerSocket serverSocket;
+
+    private List<ClientHandler> clients = new ArrayList<>();
 
     public Server() {
         try {
@@ -25,36 +30,74 @@ public class Server {
             while(true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("An user enters");
-                new Thread(new ClientHandler(clientSocket)).start();
+
+                ClientHandler client = new ClientHandler(clientSocket);
+                this.clients.add(client);
+                new Thread(client).start();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private ClientHandler getClient(String username) {
+        for (ClientHandler client : this.clients) {
+            if (username.equals(client.getUsername())) {
+                return client;
+            }
+        }
+        return null;
+    }
+
+    private void broadCastOnlineUsersList(String newUser) throws IOException {
+        for (ClientHandler clientHandler : this.clients) {
+            Message notification = new Message();
+            notification.setSender("server");
+            notification.setReceiver(clientHandler.getUsername());
+            notification.setType(1);
+
+            StringBuilder content = new StringBuilder();
+
+            if (clientHandler.getUsername().equals(newUser)) {
+                content.append("Users list:");
+                for (ClientHandler clientHandler2 : this.clients) {
+                    content.append(clientHandler2.getUsername());
+                    content.append(";");
+                }
+            } else {
+                content.append("New user:");
+                content.append(newUser);
+            }
+
+            notification.setContent(content.toString().getBytes());
+            clientHandler.sendMessage(notification);
+        }
+    }
+
     private class ClientHandler implements Runnable {
         private Socket clientSocket;
-
         private String username;
-
         private BufferedInputStream bis;
-        
         private BufferedOutputStream bos;
+        private final MessageProxy messageProxy;
 
         public ClientHandler(Socket clientSocket) throws IOException {
             this.clientSocket = clientSocket;
             this.bis = new BufferedInputStream(clientSocket.getInputStream());
-            this.bos = new BufferedOutputStream(clientSocket.getOutputStream());                
+            this.bos = new BufferedOutputStream(clientSocket.getOutputStream());       
+            this.messageProxy = new MessageProxy(bos);
+        }
+
+        public String getUsername() {
+            return this.username;
         }
 
         @Override public void run() { 
             try { 
                 byte[] lengthBuffer = new byte[4]; 
                 int bytesRead;
-                System.out.println("Waiting for messages...");
 
                 while ((bytesRead = bis.read(lengthBuffer)) != -1) { 
-                    System.out.println("Username: " + username);
                     int totalBytesRead = bytesRead; 
 
                     // Reading length of message
@@ -81,6 +124,7 @@ public class Server {
                     ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(messageBuffer, 0, messageLength);
                     ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
 
+                    // Handle the received message
                     Message message = (Message) objectInputStream.readObject();
 
                     String receiver = message.getReceiver();
@@ -92,8 +136,21 @@ public class Server {
                             String request = elements[0];
                             if (request.equals("Username")) {
                                 this.username = elements[1];
+                                broadCastOnlineUsersList(this.username);
                             }
                         }  
+                    } else {
+                        ClientHandler receiverHandler = getClient(receiver);
+                        if (receiverHandler != null) {
+                            try {
+                                receiverHandler.sendMessage(message);    
+                            } catch (Exception e) {
+                                System.out.println("Error: Message Proxy has problem !!!");
+                                e.printStackTrace();
+                            }
+                        } else {
+                            System.out.println("Error: Receiver is not found !!!");
+                        }
                     }
 
                     System.out.println(message);
@@ -104,7 +161,11 @@ public class Server {
                 e.printStackTrace(); 
             } 
         }
-    }
+
+        public void sendMessage(Message message) throws IOException {
+            this.messageProxy.sendMessage(message);
+        }
+    } 
 
     public static void main(String[] args) {
         Server server = new Server();    
