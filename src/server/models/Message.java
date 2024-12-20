@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 public class Message implements Serializable {
     private String sender;
     private String receiver;
-    private int type;
+    private MessageType type;
     private byte[] content;
 
     public String getSender() {
@@ -30,11 +30,11 @@ public class Message implements Serializable {
         this.receiver = receiver;
     }
 
-    public int getType() {
+    public MessageType getType() {
         return type;
     }
 
-    public void setType(int type) {
+    public void setType(MessageType type) {
         this.type = type;
     }
 
@@ -47,7 +47,7 @@ public class Message implements Serializable {
     }
 
     public String getContentAsString() { 
-        if (type == 1) {
+        if (type == MessageType.TEXT) {
             return new String(content, StandardCharsets.UTF_8); 
         } 
         return null; 
@@ -61,7 +61,7 @@ public class Message implements Serializable {
     public String toString() {
         return "Sender: " + this.sender + "\n"
                 + "Receiver: " + this.receiver + "\n" 
-                + "Content: " + (this.type == 1 ? this.getContentAsString() : this.content.toString());
+                + "Content: " + (this.type == MessageType.TEXT ? this.getContentAsString() : this.content.toString());
     }
 }
 

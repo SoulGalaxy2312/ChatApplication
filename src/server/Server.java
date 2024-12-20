@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import server.models.Message;
+import server.models.MessageType;
 import server.proxies.MessageProxy;
 import server.repositories.MessageRepository;
 
@@ -55,7 +56,7 @@ public class Server {
             Message notification = new Message();
             notification.setSender("server");
             notification.setReceiver(clientHandler.getUsername());
-            notification.setType(1);
+            notification.setType(MessageType.TEXT);
 
             StringBuilder content = new StringBuilder();
 
@@ -134,9 +135,9 @@ public class Server {
                         String content = new String(message.getContent(), StandardCharsets.UTF_8);
                         String[] elements = content.split(":");
                         if (elements.length == 2) {
-                            String request = elements[0];
+                            String request = elements[0].trim();
                             if (request.equals("Username")) {
-                                this.username = elements[1];
+                                this.username = elements[1].trim();
                                 broadCastOnlineUsersList(this.username);
                             }
                         }  

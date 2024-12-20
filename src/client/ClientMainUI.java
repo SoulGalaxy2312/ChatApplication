@@ -18,6 +18,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.DefaultListModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -27,6 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import server.models.Message;
+import server.models.MessageType;
 import server.proxies.MessageProxy;
 import server.repositories.MessageRepository;
 
@@ -97,6 +99,40 @@ public class ClientMainUI extends JFrame {
             }
         });
 
+        JButton createGroupButton = new JButton("Create Group");
+        createGroupButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JTextField groupNameField = new JTextField();
+                JTextField membersField = new JTextField();
+                Object[] message = {
+                    "Group name:", groupNameField,
+                    "Members (separated by \",\"):", membersField
+                };
+                
+                int option = JOptionPane.showConfirmDialog(null, message, "Create Group", JOptionPane.OK_CANCEL_OPTION);
+                if (option == JOptionPane.OK_OPTION) {
+                    String groupName = groupNameField.getText();
+                    String members = membersField.getText();
+                    try {
+                        Message messageObj = new Message();
+                        messageObj.setSender(username);
+                        messageObj.setReceiver("server");
+                        messageObj.setType(MessageType.TEXT);
+                        StringBuilder builder = new StringBuilder();
+                        builder.append("Create group:");
+                        builder.append(groupName);
+                        builder.append(":");
+                        builder.append(members);
+                        messageObj.setContent(builder.toString().getBytes());
+                        messageProxy.sendMessage(messageObj);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
+
         // Input and send button
         JPanel inputPanel = new JPanel(new BorderLayout());
         messageInput = new JTextField();
@@ -104,6 +140,7 @@ public class ClientMainUI extends JFrame {
 
         inputPanel.add(messageInput, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
+        inputPanel.add(createGroupButton, BorderLayout.WEST);
 
         // Main layout setup
         JPanel leftPanel = new JPanel(new BorderLayout());
@@ -135,7 +172,7 @@ public class ClientMainUI extends JFrame {
             Message message = new Message();
             message.setSender(username);
             message.setReceiver("server");
-            message.setType(1);
+            message.setType(MessageType.TEXT);
             String content = "Username:" + username;
             message.setContent(content.getBytes());
             messageProxy.sendMessage(message);
@@ -235,7 +272,7 @@ public class ClientMainUI extends JFrame {
                 Message message = new Message();
                 message.setSender(username);
                 message.setReceiver(currentReceiver);
-                message.setType(1);
+                message.setType(MessageType.TEXT);
                 message.setContent(input.getBytes());
                 messageProxy.sendMessage(message);
 
