@@ -14,6 +14,7 @@ import java.util.List;
 
 import server.models.Message;
 import server.proxies.MessageProxy;
+import server.repositories.MessageRepository;
 
 public class Server {
     private final int SERVER_PORT = 1234;
@@ -151,6 +152,9 @@ public class Server {
                         } else {
                             System.out.println("Error: Receiver is not found !!!");
                         }
+
+                        MessageRepository messageRepository = new MessageRepository();
+                        messageRepository.saveMessage(message);
                     }
 
                     System.out.println(message);

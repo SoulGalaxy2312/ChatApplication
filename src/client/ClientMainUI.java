@@ -8,6 +8,7 @@ import java.io.ObjectInputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -27,6 +28,7 @@ import java.awt.event.ActionListener;
 
 import server.models.Message;
 import server.proxies.MessageProxy;
+import server.repositories.MessageRepository;
 
 public class ClientMainUI extends JFrame {
     private final String username;
@@ -77,7 +79,20 @@ public class ClientMainUI extends JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting() && onlineUsersList.getSelectedValue() != null) {
                     currentReceiver = onlineUsersList.getSelectedValue();
-                    chatHistory.append("Switched to chat with: " + currentReceiver + "\n");
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            chatHistory.setText("Current chat with: " + currentReceiver + "\n");
+                            MessageRepository messageRepository = new MessageRepository();
+                            List<Message> messages = messageRepository.loadMessages(username, currentReceiver);
+
+                            for (Message message : messages) {
+                                String sender = message.getSender().equals(username) ? "You" : message.getSender();
+                                String content = new String(message.getContent(), StandardCharsets.UTF_8);
+                                chatHistory.append(sender + ": " + content + "\n");
+                            }
+                        }
+                    });
                 }
             }
         });
@@ -197,6 +212,11 @@ public class ClientMainUI extends JFrame {
                                     });
                                 }
                             }
+                        } else {
+                            if (sender.equals(currentReceiver)) {
+                                String content = new String(message.getContent(), StandardCharsets.UTF_8);
+                                chatHistory.append(sender + ": " + content + "\n");
+                            }
                         }
 
                         System.out.println(message);
@@ -218,6 +238,7 @@ public class ClientMainUI extends JFrame {
                 message.setType(1);
                 message.setContent(input.getBytes());
                 messageProxy.sendMessage(message);
+
                 chatHistory.append("You: " + input + "\n");
                 messageInput.setText("");
             } catch (IOException e) {
