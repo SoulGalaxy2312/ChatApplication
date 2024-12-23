@@ -51,4 +51,14 @@ public class db {
         return false;
     }
 
+    public boolean isAccountExist(String username) {
+        for (Account acc : instance.accounts) {
+            if (acc.getUsername().equals(username)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
 }

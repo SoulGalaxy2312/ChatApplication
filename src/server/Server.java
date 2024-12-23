@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import server.db.db;
+import server.models.Group;
 import server.models.Message;
 import server.models.MessageType;
 import server.proxies.MessageProxy;
@@ -19,6 +21,8 @@ import server.repositories.MessageRepository;
 
 public class Server {
     private final int SERVER_PORT = 1234;
+
+    private String[] users;
 
     ServerSocket serverSocket;
 
@@ -134,13 +138,78 @@ public class Server {
                     if (receiver.equals("server")) {
                         String content = new String(message.getContent(), StandardCharsets.UTF_8);
                         String[] elements = content.split(":");
-                        if (elements.length == 2) {
+
+                        if (elements.length <= 0) {
+                            System.out.println("Error: Message content is wrong!!!");
+                        } else {
                             String request = elements[0].trim();
                             if (request.equals("Username")) {
-                                this.username = elements[1].trim();
-                                broadCastOnlineUsersList(this.username);
+                                if (elements.length != 2) {
+                                    System.out.println("Error: Authenticate request format wrong!!!");
+                                } else {
+                                    this.username = elements[1].trim();
+                                    broadCastOnlineUsersList(this.username);
+                                }
+                            } else if (request.equals("Create group")) {
+                                if (elements.length != 3) {
+                                    System.out.println("Error: Create group request format wrong!!!");
+                                } else {
+                                    String groupName = elements[1];
+                                    String[] members = elements[2].split(",");
+                                    db dbInstance = db.getInstance();
+                                    boolean containsNonExistMember = false;
+
+                                    for (String member : members) {
+                                        if (!dbInstance.isAccountExist(member)) {
+                                            containsNonExistMember = true;
+                                            Message replyRequest = new Message();
+    
+                                            replyRequest.setSender("server");
+                                            replyRequest.setReceiver(message.getSender());
+                                            replyRequest.setType(MessageType.TEXT);
+                                            replyRequest.setContentFromString("Create group:fail");
+    
+                                            ClientHandler receiverHandler = getClient(message.getSender());
+    
+                                            if (receiverHandler != null) {
+                                                try {
+                                                    receiverHandler.sendMessage(replyRequest);    
+                                                } catch (Exception e) {
+                                                    System.out.println("Error: Message Proxy has problem !!!");
+                                                    e.printStackTrace();
+                                                }
+                                            } else {
+                                                System.out.println("Error: Receiver is online!!!");
+                                            }
+
+                                            break;
+                                        }
+                                    }
+                                    if (!containsNonExistMember) {
+                                        for (String member : members) {
+                                            Message notification = new Message();
+                                            notification.setSender("server");
+                                            notification.setReceiver(member);
+                                            notification.setType(MessageType.TEXT);
+                                            notification.setContentFromString("Create group:" + "Group_" + groupName);
+
+                                            ClientHandler receiverHandler = getClient(member);
+
+                                            if (receiverHandler != null) {
+                                                try {
+                                                    receiverHandler.sendMessage(notification);
+                                                } catch (Exception e) {
+                                                    System.out.println("Error: Message Proxy has problem !!!");
+                                                    e.printStackTrace();
+                                                }
+                                            } else {
+                                                System.out.println("Error: Receiver is not online!!!");
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        }  
+                        }
                     } else {
                         ClientHandler receiverHandler = getClient(receiver);
                         if (receiverHandler != null) {
@@ -151,7 +220,7 @@ public class Server {
                                 e.printStackTrace();
                             }
                         } else {
-                            System.out.println("Error: Receiver is not found !!!");
+                            System.out.println("Error: Receiver is not online!!!");
                         }
 
                         MessageRepository messageRepository = new MessageRepository();

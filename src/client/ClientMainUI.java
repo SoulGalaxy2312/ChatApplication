@@ -224,9 +224,12 @@ public class ClientMainUI extends JFrame {
                         if (sender.equals("server")) {
                             String content = new String(message.getContent(), StandardCharsets.UTF_8);
                             String[] elements = content.split(":");
-                            if (elements.length == 2) {
-                                String notification = elements[0];  
-                                
+                            
+                            if (elements.length <= 0) {
+                                System.out.println("Error: Message format is wrong");
+                            } else {
+                                String notification = elements[0];
+
                                 if (notification.equals("Users list")) { // Handle case: Current user is newly connected to server
                                     String[] users = elements[1].split(";");
 
@@ -247,6 +250,15 @@ public class ClientMainUI extends JFrame {
                                             onlineUsersModel.addElement(newUser);
                                         }
                                     });
+                                } else if (notification.equals("Create group")) {
+                                    if (!elements[1].equals("fail")) {
+                                        SwingUtilities.invokeLater(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                onlineUsersModel.addElement(elements[1]);
+                                            }
+                                        });
+                                    }
                                 }
                             }
                         } else {
