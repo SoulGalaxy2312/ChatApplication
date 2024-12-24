@@ -17,18 +17,21 @@ import server.models.Group;
 import server.models.Message;
 import server.models.MessageType;
 import server.proxies.MessageProxy;
+import server.repositories.GroupRepository;
 import server.repositories.MessageRepository;
 
 public class Server {
     private final int SERVER_PORT = 1234;
 
-    private String[] users;
-
     ServerSocket serverSocket;
 
     private List<ClientHandler> clients = new ArrayList<>();
 
+    private List<Group> groups = new ArrayList<>();
+
     public Server() {
+        groups = new GroupRepository().loadGroups();
+
         try {
             serverSocket = new ServerSocket(SERVER_PORT);
             System.out.println("Server is running at port 1234");
@@ -78,6 +81,25 @@ public class Server {
             notification.setContent(content.toString().getBytes());
             clientHandler.sendMessage(notification);
         }
+    }
+
+    private void sendGroupToUser(String username) throws IOException {
+        Message notification = new Message();
+        notification.setSender("server");
+        notification.setReceiver(username);
+        notification.setType(MessageType.TEXT);
+
+        List<String> groupList = new GroupRepository().findGroupListByUsername(groups, username);
+        StringBuilder builder = new StringBuilder();
+        builder.append("Group List:");
+        for (String group : groupList) {
+            builder.append(group).append(",");
+        }
+
+        notification.setContentFromString(builder.toString());
+
+        ClientHandler receiver = getClient(username);
+        receiver.sendMessage(notification);
     }
 
     private class ClientHandler implements Runnable {
@@ -149,6 +171,7 @@ public class Server {
                                 } else {
                                     this.username = elements[1].trim();
                                     broadCastOnlineUsersList(this.username);
+                                    sendGroupToUser(this.username);
                                 }
                             } else if (request.equals("Create group")) {
                                 if (elements.length != 3) {
@@ -179,33 +202,34 @@ public class Server {
                                                     e.printStackTrace();
                                                 }
                                             } else {
-                                                System.out.println("Error: Receiver is online!!!");
+                                                System.out.println("Error: Receiver " + receiver + " is not online!!!");
                                             }
-
                                             break;
                                         }
                                     }
+
                                     if (!containsNonExistMember) {
                                         for (String member : members) {
-                                            Message notification = new Message();
-                                            notification.setSender("server");
-                                            notification.setReceiver(member);
-                                            notification.setType(MessageType.TEXT);
-                                            notification.setContentFromString("Create group:" + "Group_" + groupName);
-
                                             ClientHandler receiverHandler = getClient(member);
-
                                             if (receiverHandler != null) {
+                                                Message notification = new Message();
+                                                notification.setSender("server");
+                                                notification.setReceiver(member);
+                                                notification.setType(MessageType.TEXT);
+                                                notification.setContentFromString("Create group:" + "Group_" + groupName);
+
                                                 try {
                                                     receiverHandler.sendMessage(notification);
                                                 } catch (Exception e) {
                                                     System.out.println("Error: Message Proxy has problem !!!");
                                                     e.printStackTrace();
                                                 }
-                                            } else {
-                                                System.out.println("Error: Receiver is not online!!!");
                                             }
                                         }
+
+                                        groups.add(new Group(new StringBuilder().append("Group_").append(groupName).toString(), members));
+                                        GroupRepository groupRepository = new GroupRepository();
+                                        groupRepository.saveGroup(new StringBuilder().append("Group_").append(elements[1]).append(":").append(elements[2]).toString());
                                     }
                                 }
                             }
@@ -220,7 +244,7 @@ public class Server {
                                 e.printStackTrace();
                             }
                         } else {
-                            System.out.println("Error: Receiver is not online!!!");
+                            System.out.println("Error: Receiver " + receiver + " is not online!!!");
                         }
 
                         MessageRepository messageRepository = new MessageRepository();

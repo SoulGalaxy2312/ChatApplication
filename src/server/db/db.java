@@ -10,7 +10,6 @@ public class db {
     private static volatile db instance;
 
     private List<Account> accounts = new ArrayList<>();
-
     private AccountRepository accountRepository = new AccountRepository();
 
     private db() {

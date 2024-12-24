@@ -250,14 +250,28 @@ public class ClientMainUI extends JFrame {
                                             onlineUsersModel.addElement(newUser);
                                         }
                                     });
-                                } else if (notification.equals("Create group")) {
-                                    if (!elements[1].equals("fail")) {
+                                } else if (notification.equals("Create group")) { // Handle case: Create Group result
+                                    if (elements.length == 2 && !elements[1].equals("fail")) {
                                         SwingUtilities.invokeLater(new Runnable() {
                                             @Override
                                             public void run() {
                                                 onlineUsersModel.addElement(elements[1]);
                                             }
                                         });
+                                    } else {
+                                        System.out.println("Error: Create group faileded");
+                                    }
+                                } else if (notification.equals("Group List")) { // Handle case: Receive group list after authenticated successfully
+                                    if (elements.length == 2) {
+                                        String[] groups = elements[1].split(",");
+                                        for (String group : groups) {
+                                            SwingUtilities.invokeLater(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    onlineUsersModel.addElement(group);
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             }

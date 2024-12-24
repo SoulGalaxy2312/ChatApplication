@@ -2,10 +2,12 @@ package server.repositories;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
@@ -21,6 +23,12 @@ public class MessageRepository {
     private String getFileUploadMessage(String sender, String receiver) {
         StringBuilder builder = new StringBuilder();
         builder.append("data").append("/").append("conversation").append("/");
+
+        if (receiver.length() >= 5 && receiver.substring(0, 5).equals("Group")) {
+            builder.append(receiver);
+            return builder.toString();
+        }
+        
         builder.append(sender).append("_").append(receiver);
 
         File uploadFile = new File(builder.toString());
